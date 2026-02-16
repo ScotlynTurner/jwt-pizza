@@ -3,7 +3,11 @@ import { User, Role } from '../src/service/pizzaService';
 
 export async function basicInit(page: Page) {
     let loggedInUser: User | undefined;
-    const validUsers: Record<string, User> = { 'd@jwt.com': { id: '3', name: 'Kai Chen', email: 'd@jwt.com', password: 'a', roles: [{ role: Role.Diner }] } };
+    const validUsers: Record<string, User> = {
+        'd@jwt.com': { id: '3', name: 'Kai Chen', email: 'd@jwt.com', password: 'a', roles: [{ role: Role.Diner }] },
+        'f@jwt.com': { id: '4', name: 'Frank Lee', email: 'f@jwt.com', password: 'franchisee', roles: [{ role: Role.Franchisee }] },
+        'a@jwt.com': { id: '5', name: 'Addy Minn', email: 'a@jwt.com', password: 'admin', roles: [{ role: Role.Admin }] },
+    };
   
     // Login or Logout
     await page.route('*/**/api/auth', async (route) => {
@@ -69,7 +73,28 @@ export async function basicInit(page: Page) {
           await route.fulfill({ status: 200 });
           return;
         }
-    });      
+    });     
+    
+    // Fetch current user (used for auto-login on page refresh)
+    await page.route('*/**/api/user/me', async (route) => {
+        if (!loggedInUser) {
+          await route.fulfill({
+            status: 401,
+            json: { error: 'Unauthorized' },
+          });
+          return;
+        }
+      
+        await route.fulfill({
+          json: {
+            id: loggedInUser.id,
+            name: loggedInUser.name,
+            email: loggedInUser.email,
+            roles: loggedInUser.roles,
+          },
+        });
+    });
+      
   
     // A standard menu
     await page.route('*/**/api/order/menu', async (route) => {
@@ -94,25 +119,125 @@ export async function basicInit(page: Page) {
     });
   
     // Standard franchises and stores
-    await page.route(/\/api\/franchise(\?.*)?$/, async (route) => {
-      const franchiseRes = {
-        franchises: [
-          {
-            id: 2,
-            name: 'LotaPizza',
-            stores: [
-              { id: 4, name: 'Lehi' },
-              { id: 5, name: 'Springville' },
-              { id: 6, name: 'American Fork' },
-            ],
-          },
-          { id: 3, name: 'PizzaCorp', stores: [{ id: 7, name: 'Spanish Fork' }] },
-          { id: 4, name: 'topSpot', stores: [] },
-        ],
-      };
-      expect(route.request().method()).toBe('GET');
-      await route.fulfill({ json: franchiseRes });
-    });
+    let franchises = [
+        {
+          id: 2,
+          name: 'pizzaPocket',
+          admins: [{ id: 4, name: 'Frank Lee', email: 'f@jwt.com' }],
+          stores: [
+            { id: 4, name: 'Lehi' },
+            { id: 5, name: 'Springville' },
+            { id: 6, name: 'American Fork' },
+          ],
+        },
+        { id: 3, name: 'PizzaCorp', stores: [{ id: 7, name: 'Spanish Fork' }] },
+        { id: 4, name: 'topSpot', stores: [] },
+      ];
+      
+      await page.route(/\/api\/franchise.*/, async (route) => {
+        const method = route.request().method();
+        const url = new URL(route.request().url());
+        const path = url.pathname;
+      
+        // Get all franchises
+        if (method === 'GET' && path === '/api/franchise') {
+          await route.fulfill({
+            json: {
+              franchises,
+              more: false,
+            },
+          });
+          return;
+        }
+      
+        // Get a user's franchises
+        const userMatch = path.match(/\/api\/franchise\/(\d+)$/);
+        if (method === 'GET' && userMatch) {
+          const userId = Number(userMatch[1]);
+      
+          const userFranchises = franchises.filter((f) =>
+            f.admins?.some((a) => a.id === userId)
+          );
+      
+          await route.fulfill({
+            json: userFranchises,
+          });
+          return;
+        }
+      
+        // Create franchise
+        if (method === 'POST' && path === '/api/franchise') {
+          const req = route.request().postDataJSON();
+      
+          const newFranchise = {
+            id: Date.now(),
+            name: req.name,
+            admins: req.admins ?? [],
+            stores: [],
+          };
+      
+          franchises.push(newFranchise);
+      
+          await route.fulfill({ json: newFranchise });
+          return;
+        }
+      
+        // Delete franchise
+        const deleteMatch = path.match(/\/api\/franchise\/(\d+)$/);
+        if (method === 'DELETE' && deleteMatch) {
+          const franchiseId = Number(deleteMatch[1]);
+      
+          franchises = franchises.filter((f) => f.id !== franchiseId);
+      
+          await route.fulfill({
+            json: { message: 'franchise deleted' },
+          });
+          return;
+        }
+      
+        // Create store
+        const storeCreateMatch = path.match(/\/api\/franchise\/(\d+)\/store$/);
+        if (method === 'POST' && storeCreateMatch) {
+          const franchiseId = Number(storeCreateMatch[1]);
+          const req = route.request().postDataJSON();
+      
+          const franchise = franchises.find((f) => f.id === franchiseId);
+      
+          const newStore = {
+            id: Date.now(),
+            name: req.name,
+            totalRevenue: 0,
+          };
+      
+          franchise?.stores.push(newStore);
+      
+          await route.fulfill({ json: newStore });
+          return;
+        }
+      
+        // Delete store
+        const storeDeleteMatch = path.match(
+          /\/api\/franchise\/(\d+)\/store\/(\d+)$/
+        );
+      
+        if (method === 'DELETE' && storeDeleteMatch) {
+          const franchiseId = Number(storeDeleteMatch[1]);
+          const storeId = Number(storeDeleteMatch[2]);
+      
+          const franchise = franchises.find((f) => f.id === franchiseId);
+      
+          if (franchise) {
+            franchise.stores = franchise.stores.filter(
+              (s) => s.id !== storeId
+            );
+          }
+      
+          await route.fulfill({
+            json: { message: 'store deleted' },
+          });
+          return;
+        }
+    });        
   
     let currentOrder: any = null;
     // Pizza Orders
