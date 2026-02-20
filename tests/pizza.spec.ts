@@ -127,6 +127,10 @@ test('admin dashboard shows for admin', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Password' }).fill('admin');
   await page.getByRole('button', { name: 'Login' }).click();
   await page.getByRole('link', { name: 'Admin' }).click();
+
+  await page.goto('http://localhost:5173/admin-dashboard/close-franchise');
+
+  await page.goto('http://localhost:5173/admin-dashboard/create-franchise');
   
 
   // await page.getByRole('button', { name: 'Add Franchise' }).click();

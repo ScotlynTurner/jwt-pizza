@@ -166,12 +166,12 @@ export async function basicInit(page: Page) {
         }
 
         // Get a list of users
-        await page.route('**/api/user?page=0&limit=5*', route =>
+        await page.route('**/api/user?**', route =>
           route.fulfill({
             status: 200,
             contentType: 'application/json',
             body: JSON.stringify({
-              users: [{ id: 999, name: 'Delete Me', email: 'delete_me@test.com', roles: [{ role: 'diner' }] }],
+              users: [{ id: 999, name: 'Delete Me', email: 'delete_me@test.com', roles: [{ role: Role.Diner }] }],
               more: false,
             }),
           })
