@@ -164,6 +164,23 @@ export async function basicInit(page: Page) {
           });
           return;
         }
+
+        // Get a list of users
+        await page.route('**/api/user?page=0&limit=5*', route =>
+          route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              users: [{ id: 999, name: 'Delete Me', email: 'delete_me@test.com', roles: [{ role: 'diner' }] }],
+              more: false,
+            }),
+          })
+        );
+
+        // Delete user
+        await page.route('**/api/user/999', route =>
+          route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'user deleted' }) })
+        );
       
         // Create franchise
         if (method === 'POST' && path === '/api/franchise') {

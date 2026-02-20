@@ -30,3 +30,27 @@ test('updateUser', async ({ page }) => {
 
   await expect(page.getByRole('main')).toContainText('pizza dinerx');
 });
+
+
+test('admin can see a list of users', async ({ page }) => {
+  const email = `a@jwt.com`;
+  const password = `admin`;
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Email address' }).fill(email);
+  await page.getByRole('textbox', { name: 'Password' }).fill(password);
+  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('link', { name: 'Admin' }).click();
+
+  await expect(page.getByRole('main')).toContainText('Mama Ricci\'s kitchen');
+  await expect(page.getByRole('main')).toContainText('Users');
+  
+  // await page.getByRole('textbox', { name: 'Filter users' }).click();
+  // await page.getByRole('textbox', { name: 'Filter users' }).fill('Delete');
+  // await page.getByRole('button', { name: 'Submit' }).click();
+  await page.getByRole('button', { name: 'Delete' }).nth(1).click();
+
+  await expect(page.getByRole('heading')).toContainText('You Are About To Delete A User');
+  await page.getByRole('button', { name: 'Delete' }).click(); // confirm
+  await expect(page.getByText('delete_me@test.com')).not.toBeVisible();
+});
