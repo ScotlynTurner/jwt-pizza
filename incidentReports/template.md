@@ -2,7 +2,7 @@
 
 ## Summary
 
-Between the time of 13:58 and 14:15 on April 7, 2025, all users encountered failures when creating an order. The event was triggered by a factory failure at 13:58.
+Between the time of 13:58 and 14:13 on April 7, 2025, all users encountered failures when creating an order. The event was triggered by a factory failure at 13:58.
 
 The event was detected by manual evaluation. The team started working on the event by 14:01. This SEV-2 incident affected 100% of users.
 
@@ -14,7 +14,7 @@ Metrics and logging will be improved by Scotlyn Turner so that failures can be f
 
 ## Impact
 
-For 17 minutes between 13:58 and 14:15 on April 7, 2025, all our users experienced failures when ordering a pizza.
+For 17 minutes between 13:58 and 14:13 on April 7, 2025, all our users experienced failures when ordering a pizza.
 
 ## Timeline
 
