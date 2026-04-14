@@ -5,9 +5,14 @@ import { pizzaService } from '../service/service';
 import View from './view';
 
 import Button from '../components/button';
-import { Franchise } from '../service/pizzaService';
+import { Franchise, Role, User } from '../service/pizzaService';
+import NotFound from './notFound';
 
-export default function CreateFranchise() {
+interface Props {
+  user: User | null;
+}
+
+export default function CreateFranchise(props: Props) {
   const navigateToParentPath = useBreadcrumb();
   const [franchise, setFranchise] = React.useState<Franchise>({ stores: [], id: '', name: '' });
 
@@ -17,8 +22,10 @@ export default function CreateFranchise() {
     navigateToParentPath();
   }
 
-  return (
-    <View title="Create franchise">
+  let response = <NotFound />;
+  if (Role.isRole(props.user, Role.Admin)) {
+    response = (
+  <View title="Create franchise">
       <div className="text-start py-8 px-4 sm:px-6 lg:px-8">
         <form onSubmit={createFranchise}>
           <div className="text-neutral-100">Want to create franchise?</div>
@@ -55,4 +62,7 @@ export default function CreateFranchise() {
       </div>
     </View>
   );
+}
+
+  return response;
 }

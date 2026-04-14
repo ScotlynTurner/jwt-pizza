@@ -76,7 +76,7 @@ export default function App() {
     { title: 'About', to: '/about', component: <About />, display: ['footer'] },
     { title: 'History', to: '/history', component: <History />, display: ['footer'] },
     { title: 'Admin', to: '/admin-dashboard', component: <AdminDashboard user={user} />, constraints: [isAdmin], display: ['nav'] },
-    { title: 'Create franchise', to: '/:subPath?/create-franchise', component: <CreateFranchise />, display: [] },
+    { title: 'Create franchise', to: '/:subPath?/create-franchise', component: <CreateFranchise user={user}/>, display: [] },
     { title: 'Close franchise', to: '/:subPath?/close-franchise', component: <CloseFranchise />, display: [] },
     { title: 'Delete user', to: '/:subPath?/delete-user', component: <DeleteUser />, display: [] },
     { title: 'Create store', to: '/:subPath?/create-store', component: <CreateStore />, display: [] },
